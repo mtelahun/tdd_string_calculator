@@ -1,12 +1,13 @@
-    
 fn add(arg: &str) -> i32 {
     let numbers: Vec<&str> = arg.split(',').collect();
     if arg.is_empty() {
-        return 0
+        return 0;
     } else if numbers.len() == 1 {
-        let number: i32 = numbers[0].parse().expect("failed to parse integer from string");
+        let number: i32 = numbers[0]
+            .parse()
+            .expect("failed to parse integer from string");
 
-        return number
+        return number;
     } else {
         let mut total = 0;
         for n in numbers {
@@ -14,7 +15,7 @@ fn add(arg: &str) -> i32 {
             total += number;
         }
 
-        return total
+        return total;
     }
 }
 
@@ -41,7 +42,10 @@ mod tests {
         let result = add("10");
 
         // Assert
-        assert_eq!(10, result, "given only one number the result is the number itself")
+        assert_eq!(
+            10, result,
+            "given only one number the result is the number itself"
+        )
     }
 
     #[test]
