@@ -1,13 +1,14 @@
-fn add(arg: &str) -> i32 {
-    let numbers: Vec<&str> = arg.split(',').collect();
+pub fn add(arg: &str) -> i32 {
+    let is_splitter = |digit| {
+        if digit == ',' || digit == '\n' {
+            return true;
+        }
+
+        return false;
+    };
+    let numbers: Vec<&str> = arg.split(is_splitter).collect();
     if arg.is_empty() {
         return 0;
-    } else if numbers.len() == 1 {
-        let number: i32 = numbers[0]
-            .parse()
-            .expect("failed to parse integer from string");
-
-        return number;
     } else {
         let mut total = 0;
         for n in numbers {
@@ -64,5 +65,17 @@ mod tests {
 
         // Assert
         assert_eq!(12, result, "given \"1,1,10\" return 12")
+    }
+
+    #[test]
+    fn commas_or_newlines_may_act_as_separators() {
+        // Arrange
+        let op = "1,2\n3";
+
+        // Act
+        let result = add(op);
+
+        // Assert
+        assert_eq!(result, 6, "given: 1,2\\n3, result is 6");
     }
 }
