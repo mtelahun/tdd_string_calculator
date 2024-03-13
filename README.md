@@ -15,3 +15,15 @@ int Add(string numbers)
 3. Allow the add method to handle newlines as separators, instead of comas
 4. Add validation to not to allow a separator at the end
     * For example “1,2,” should return an error (or throw an exception)
+5. Allow the add method to handle different delimiters
+
+    To change the delimiter, the beginning of the input will contain a separate line that looks like this:
+
+//[delimiter]\n[numbers]
+
+    “//;\n1;3” should return “4”
+    “//|\n1|2|3” should return “6”
+    “//sep\n2sep5” should return “7”
+    “//|\n1|2,3” is invalid and should return an error (or throw an exception) with the message “‘|’ expected but ‘,’ found at position 3.”
+
+STOP HERE if you are a beginner. Continue if you could finish the steps (1-5.) within 30 minutes.

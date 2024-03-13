@@ -1,42 +1,84 @@
 const SEPARATORS: [char; 2] = [',', '\n'];
 
 pub fn add(arg: &str) -> Result<i32, Error> {
+    if arg.is_empty() {
+        return Ok(0);
+    }
+
+    let (separators, input) = get_input_and_separators(arg);
     let is_splitter = |digit| {
-        if SEPARATORS.contains(&digit) {
+        if separators.contains(&digit) {
             return true;
         }
 
-        return false;
+        false
     };
-    let numbers: Vec<&str> = arg.split(is_splitter).collect();
-    if arg.is_empty() {
-        return Ok(0);
-    } else if contains_trailing_separator(&numbers) {
-        return Err(Error::TrailingSeparator);
+    let numbers: Vec<&str> = input.split(is_splitter).collect();
+    if contains_trailing_separator(&numbers) {
+        Err(Error::TrailingSeparator)
     } else {
         let mut total = 0;
         for n in numbers {
-            let number: i32 = n.parse().expect("failed to parse integer from string");
+            let number = match n.parse::<i32>() {
+                Ok(n) => n,
+                Err(_) => {
+                    let (invalid_char, position) =
+                        get_invalid_character_and_position(n, separators[0]);
+                    return Err(Error::InvalidSeparator(InvalidSeparator {
+                        expected: separators[0],
+                        actual: invalid_char,
+                        position,
+                    }));
+                }
+            };
             total += number;
         }
 
-        return Ok(total);
+        Ok(total)
     }
+}
+
+fn get_input_and_separators(input: &str) -> (Vec<char>, &str) {
+    let mut separator = Vec::new();
+    let mut input_chars = input.chars();
+    if input_chars.next().unwrap() == '/' && input_chars.next().unwrap() == '/' {
+        let lines: Vec<&str> = input.split('\n').collect();
+        separator.push(input_chars.next().unwrap());
+
+        return (separator, lines[1]);
+    }
+    (SEPARATORS.to_vec(), input)
 }
 
 fn contains_trailing_separator(numbers: &[&str]) -> bool {
     numbers[numbers.len() - 1].is_empty()
 }
 
+fn get_invalid_character_and_position(input: &str, separator: char) -> (char, usize) {
+    let mut position = 1;
+    let mut invalid_char: char = separator;
+    for c in input.chars().by_ref() {
+        if !c.is_numeric() {
+            invalid_char = c;
+            break;
+        }
+        position += 1;
+    }
+
+    (invalid_char, position)
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Error {
     TrailingSeparator,
+    InvalidSeparator(InvalidSeparator),
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let msg = match self {
-            Error::TrailingSeparator => "trailing separator in input",
+            Error::TrailingSeparator => String::from("trailing separator in input"),
+            Error::InvalidSeparator(e) => e.to_string(),
         };
 
         write!(f, "{msg}")
@@ -44,6 +86,23 @@ impl std::fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+#[derive(Debug, PartialEq)]
+pub struct InvalidSeparator {
+    expected: char,
+    actual: char,
+    position: usize,
+}
+
+impl std::fmt::Display for InvalidSeparator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "'{}' expected, but found '{}' at position {}",
+            self.expected, self.actual, self.position
+        )
+    }
+}
 
 fn main() {
     println!("Hello, world!");
@@ -119,6 +178,38 @@ mod tests {
             result.unwrap_err(),
             Error::TrailingSeparator,
             "given: 1,2\\n3, TrailingSeparator Error is returned"
+        );
+    }
+
+    #[test]
+    fn given_initial_line_to_set_separator_then_use_new_separator() {
+        // Arrange
+        let op = "//|\n1|3";
+
+        // Act
+        let result = add(op);
+
+        // Assert
+        assert_eq!(result.unwrap(), 4, "given: //|\n1|3 result is 4");
+    }
+
+    #[test]
+    fn given_a_specified_separator_when_another_separator_is_used_then_error() {
+        // Arrange
+        let op = "//;\n1|2";
+
+        // Act
+        let result = add(op);
+
+        // Assert
+        assert!(result.is_err(), "given: //;\n1|2 result is an error");
+        assert_eq!(
+            result.err().unwrap(),
+            Error::InvalidSeparator(crate::InvalidSeparator {
+                expected: ';',
+                actual: '|',
+                position: 2
+            })
         );
     }
 }
