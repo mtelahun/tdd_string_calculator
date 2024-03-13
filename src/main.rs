@@ -1,6 +1,8 @@
-pub fn add(arg: &str) -> i32 {
+const SEPARATORS: [char; 2] = [',', '\n'];
+
+pub fn add(arg: &str) -> Result<i32, Error> {
     let is_splitter = |digit| {
-        if digit == ',' || digit == '\n' {
+        if SEPARATORS.contains(&digit) {
             return true;
         }
 
@@ -8,7 +10,9 @@ pub fn add(arg: &str) -> i32 {
     };
     let numbers: Vec<&str> = arg.split(is_splitter).collect();
     if arg.is_empty() {
-        return 0;
+        return Ok(0);
+    } else if contains_trailing_separator(&numbers) {
+        return Err(Error::TrailingSeparator);
     } else {
         let mut total = 0;
         for n in numbers {
@@ -16,9 +20,30 @@ pub fn add(arg: &str) -> i32 {
             total += number;
         }
 
-        return total;
+        return Ok(total);
     }
 }
+
+fn contains_trailing_separator(numbers: &[&str]) -> bool {
+    numbers[numbers.len() - 1].is_empty()
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    TrailingSeparator,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            Error::TrailingSeparator => "trailing separator in input",
+        };
+
+        write!(f, "{msg}")
+    }
+}
+
+impl std::error::Error for Error {}
 
 fn main() {
     println!("Hello, world!");
@@ -26,7 +51,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use crate::add;
+    use crate::{add, Error};
 
     #[test]
     fn given_empty_string_return_0() {
@@ -34,7 +59,7 @@ mod tests {
         let result = add("");
 
         // Assert
-        assert_eq!(0, result, "given an empty string the result is 0")
+        assert_eq!(0, result.unwrap(), "given an empty string the result is 0")
     }
 
     #[test]
@@ -44,7 +69,8 @@ mod tests {
 
         // Assert
         assert_eq!(
-            10, result,
+            10,
+            result.unwrap(),
             "given only one number the result is the number itself"
         )
     }
@@ -55,7 +81,7 @@ mod tests {
         let result = add("1,10");
 
         // Assert
-        assert_eq!(11, result, "given \"1,10\" return 11")
+        assert_eq!(11, result.unwrap(), "given \"1,10\" return 11")
     }
 
     #[test]
@@ -64,7 +90,7 @@ mod tests {
         let result = add("1,1,10");
 
         // Assert
-        assert_eq!(12, result, "given \"1,1,10\" return 12")
+        assert_eq!(12, result.unwrap(), "given \"1,1,10\" return 12")
     }
 
     #[test]
@@ -76,6 +102,23 @@ mod tests {
         let result = add(op);
 
         // Assert
-        assert_eq!(result, 6, "given: 1,2\\n3, result is 6");
+        assert_eq!(result.unwrap(), 6, "given: 1,2\\n3 result is 6");
+    }
+
+    #[test]
+    fn given_calculation_with_trailing_comma_return_error() {
+        // Arrange
+        let op = "1,2\n3,";
+
+        // Act
+        let result = add(op);
+
+        // Assert
+        assert!(result.is_err(), "given: 1,2\\n3, result is an error");
+        assert_eq!(
+            result.unwrap_err(),
+            Error::TrailingSeparator,
+            "given: 1,2\\n3, TrailingSeparator Error is returned"
+        );
     }
 }
