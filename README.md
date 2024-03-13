@@ -27,3 +27,9 @@ int Add(string numbers)
     “//|\n1|2,3” is invalid and should return an error (or throw an exception) with the message “‘|’ expected but ‘,’ found at position 3.”
 
 STOP HERE if you are a beginner. Continue if you could finish the steps (1-5.) within 30 minutes.
+
+6. Calling add with negative numbers will return the message “Negative number(s) not allowed: <negativeNumbers>”
+
+    “1,-2” is invalid and should return the message “Negative number(s) not allowed: -2”
+    
+    “2,-4,-9” is invalid and should return the message “Negative number(s) not allowed: -4, -9”

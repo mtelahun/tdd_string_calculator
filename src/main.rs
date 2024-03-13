@@ -18,6 +18,7 @@ pub fn add(arg: &str) -> Result<i32, Error> {
         Err(Error::TrailingSeparator)
     } else {
         let mut total = 0;
+        let mut negative_numbers = Vec::<i32>::new();
         for n in numbers {
             let number = match n.parse::<i32>() {
                 Ok(n) => n,
@@ -31,9 +32,12 @@ pub fn add(arg: &str) -> Result<i32, Error> {
                     }));
                 }
             };
+            if number < 0 {
+                negative_numbers.push(number);
+            }
             total += number;
         }
-
+        check_negative_numbers(&negative_numbers)?;
         Ok(total)
     }
 }
@@ -68,24 +72,22 @@ fn get_invalid_character_and_position(input: &str, separator: char) -> (char, us
     (invalid_char, position)
 }
 
+fn check_negative_numbers(numbers: &[i32]) -> Result<(), Error> {
+    if !numbers.is_empty() {
+        return Err(Error::NegativeNumber(NegativeNumber {
+            numbers: numbers.to_vec(),
+        }));
+    }
+
+    Ok(())
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Error {
     TrailingSeparator,
     InvalidSeparator(InvalidSeparator),
+    NegativeNumber(NegativeNumber),
 }
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let msg = match self {
-            Error::TrailingSeparator => String::from("trailing separator in input"),
-            Error::InvalidSeparator(e) => e.to_string(),
-        };
-
-        write!(f, "{msg}")
-    }
-}
-
-impl std::error::Error for Error {}
 
 #[derive(Debug, PartialEq)]
 pub struct InvalidSeparator {
@@ -94,12 +96,45 @@ pub struct InvalidSeparator {
     position: usize,
 }
 
+#[derive(Debug, PartialEq)]
+pub struct NegativeNumber {
+    numbers: Vec<i32>,
+}
+
+impl std::error::Error for Error {}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            Error::TrailingSeparator => String::from("trailing separator in input"),
+            Error::InvalidSeparator(e) => e.to_string(),
+            Error::NegativeNumber(e) => e.to_string(),
+        };
+
+        write!(f, "{msg}")
+    }
+}
+
 impl std::fmt::Display for InvalidSeparator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "'{}' expected, but found '{}' at position {}",
             self.expected, self.actual, self.position
+        )
+    }
+}
+
+impl std::fmt::Display for NegativeNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut as_string = Vec::<String>::new();
+        for n in self.numbers.iter() {
+            as_string.push(format!("{n}"))
+        }
+        write!(
+            f,
+            "Negative number(s) are not allowed: {:?}",
+            as_string.join(",")
         )
     }
 }
@@ -209,6 +244,43 @@ mod tests {
                 expected: ';',
                 actual: '|',
                 position: 2
+            })
+        );
+    }
+
+    #[test]
+    fn given_a_negative_number_then_error() {
+        // Arrange
+        let op = "1,-2";
+
+        // Act
+        let result = add(op);
+
+        // Assert
+        assert!(result.is_err(), "given: 1,-2 result is an error");
+        assert_eq!(
+            result.err().unwrap(),
+            Error::NegativeNumber(crate::NegativeNumber { numbers: vec![-2] })
+        );
+    }
+
+    #[test]
+    fn given_multiple_negative_numbers_then_error() {
+        // Arrange
+        let op = "2,-4,-9";
+
+        // Act
+        let result = add(op);
+
+        // Assert
+        assert!(
+            result.is_err(),
+            "given: 2,-4,-9 result is an error with all numbers"
+        );
+        assert_eq!(
+            result.err().unwrap(),
+            Error::NegativeNumber(crate::NegativeNumber {
+                numbers: vec![-4, -9],
             })
         );
     }
