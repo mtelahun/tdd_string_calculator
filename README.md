@@ -31,5 +31,10 @@ STOP HERE if you are a beginner. Continue if you could finish the steps (1-5.) w
 6. Calling add with negative numbers will return the message “Negative number(s) not allowed: <negativeNumbers>”
 
     “1,-2” is invalid and should return the message “Negative number(s) not allowed: -2”
-    
+
     “2,-4,-9” is invalid and should return the message “Negative number(s) not allowed: -4, -9”
+
+7. Calling add with multiple errors will return all error messages separated by newlines.
+
+    “//|\n1|2,-3” is invalid and return the message “Negative number(s) not allowed: -3\n’|’ expected but ‘,’ found at position 3.”
+
